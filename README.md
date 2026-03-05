@@ -1,4 +1,4 @@
-![[screenshots/landing-page-hero.png]]
+![Landing page hero](screenshots/landing-page-hero.png)
 
 # Hands-on Claude Code
 
@@ -24,12 +24,6 @@ A dark-themed, animated landing page for Claude Code built with pure HTML and Ta
 - Copy-to-clipboard install command with feedback
 - Sticky nav with backdrop blur
 - Fully responsive (mobile → desktop)
-
-**Screenshot:**
-
-![Landing page hero](screenshots/landing-page-hero.png)
-
-![Full page](screenshots/landing-page-full.png)
 
 **Open locally:**
 
