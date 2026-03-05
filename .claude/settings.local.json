@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(echo '{}' | python3 /Users/muhammadsundoro/Documents/repository/github/hands-on-claude/.claude/hooks/on-stop.py)",
-      "mcp__playwright__browser_navigate"
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_take_screenshot"
     ]
   },
   "enableAllProjectMcpServers": true,
