@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Claude Code — AI-Powered CLI for Developers</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            claude: {
+              orange: '#D97757',
+              cream: '#F5F0E8',
+              dark: '#0A0A0F',
+              surface: '#12121A',
+              card: '#1A1A26',
+              border: '#2A2A3E',
+              muted: '#6B7280',
+            }
+          },
+          fontFamily: {
+            mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
+          },
+          animation: {
+            'float': 'float 6s ease-in-out infinite',
+            'float-slow': 'float 9s ease-in-out infinite',
+            'glow-pulse': 'glowPulse 3s ease-in-out infinite',
+            'typewriter': 'typewriter 3s steps(40) 1s forwards',
+            'blink': 'blink 1s step-end infinite',
+            'slide-up': 'slideUp 0.8s ease-out forwards',
+            'fade-in': 'fadeIn 1s ease-out forwards',
+            'scan': 'scan 4s linear infinite',
+            'orbit': 'orbit 12s linear infinite',
+            'orbit-reverse': 'orbit 18s linear infinite reverse',
+            'shimmer': 'shimmer 2s linear infinite',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-20px)' },
+            },
+            glowPulse: {
+              '0%, 100%': { boxShadow: '0 0 20px rgba(217, 119, 87, 0.3)' },
+              '50%': { boxShadow: '0 0 60px rgba(217, 119, 87, 0.7)' },
+            },
+            typewriter: {
+              from: { width: '0' },
+              to: { width: '100%' },
+            },
+            blink: {
+              '0%, 100%': { opacity: '1' },
+              '50%': { opacity: '0' },
+            },
+            slideUp: {
+              from: { opacity: '0', transform: 'translateY(40px)' },
+              to: { opacity: '1', transform: 'translateY(0)' },
+            },
+            fadeIn: {
+              from: { opacity: '0' },
+              to: { opacity: '1' },
+            },
+            scan: {
+              '0%': { transform: 'translateY(-100%)' },
+              '100%': { transform: 'translateY(400%)' },
+            },
+            orbit: {
+              from: { transform: 'rotate(0deg) translateX(120px) rotate(0deg)' },
+              to: { transform: 'rotate(360deg) translateX(120px) rotate(-360deg)' },
+            },
+            shimmer: {
+              '0%': { backgroundPosition: '-200% 0' },
+              '100%': { backgroundPosition: '200% 0' },
+            },
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { background-color: #0A0A0F; font-family: 'Inter', sans-serif; }
+
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(217,119,87,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(217,119,87,0.05) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+
+    .noise-overlay::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    .glow-orange { text-shadow: 0 0 30px rgba(217, 119, 87, 0.6); }
+    .glow-border { box-shadow: 0 0 0 1px rgba(217,119,87,0.3), 0 0 30px rgba(217,119,87,0.1); }
+
+    .terminal-line { opacity: 0; animation: slideUp 0.5s ease-out forwards; }
+    .terminal-line:nth-child(1) { animation-delay: 0.2s; }
+    .terminal-line:nth-child(2) { animation-delay: 0.6s; }
+    .terminal-line:nth-child(3) { animation-delay: 1.0s; }
+    .terminal-line:nth-child(4) { animation-delay: 1.4s; }
+    .terminal-line:nth-child(5) { animation-delay: 1.8s; }
+    .terminal-line:nth-child(6) { animation-delay: 2.2s; }
+
+    .feature-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .feature-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 60px rgba(217,119,87,0.15);
+    }
+
+    .shimmer-btn {
+      background: linear-gradient(90deg,
+        rgba(217,119,87,1) 0%,
+        rgba(245,200,160,1) 40%,
+        rgba(217,119,87,1) 60%,
+        rgba(217,119,87,1) 100%
+      );
+      background-size: 200% auto;
+      animation: shimmer 2.5s linear infinite;
+    }
+
+    .stat-counter {
+      background: linear-gradient(135deg, #D97757, #F5A87C);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .scan-line {
+      position: absolute;
+      left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(217,119,87,0.6), transparent);
+      animation: scan 4s linear infinite;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0A0A0F; }
+    ::-webkit-scrollbar-thumb { background: #D97757; border-radius: 3px; }
+
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: rgba(217,119,87,0.6);
+      animation: float var(--dur, 6s) ease-in-out infinite;
+      animation-delay: var(--delay, 0s);
+    }
+  </style>
+</head>
+<body class="bg-claude-dark text-white overflow-x-hidden noise-overlay">
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b border-claude-border bg-claude-dark/80">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-claude-orange flex items-center justify-center animate-glow-pulse">
+          <span class="text-white font-bold text-sm font-mono">C</span>
+        </div>
+        <span class="font-semibold text-white tracking-wide">Claude <span class="text-claude-orange">Code</span></span>
+      </div>
+      <div class="hidden md:flex items-center gap-8 text-sm text-claude-muted">
+        <a href="#features" class="hover:text-white transition-colors">Features</a>
+        <a href="#demo" class="hover:text-white transition-colors">Demo</a>
+        <a href="#workflow" class="hover:text-white transition-colors">Workflow</a>
+        <a href="#install" class="hover:text-white transition-colors">Install</a>
+      </div>
+      <a href="#install"
+        class="hidden md:flex shimmer-btn text-white text-sm font-semibold px-5 py-2 rounded-lg transition-all hover:scale-105">
+        Get Started
+      </a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="relative min-h-screen flex items-center justify-center overflow-hidden grid-bg pt-20">
+
+    <!-- Background glow orbs -->
+    <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-claude-orange/10 rounded-full blur-3xl animate-float-slow pointer-events-none"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl animate-float pointer-events-none"></div>
+    <div class="absolute top-1/2 left-1/2 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl animate-float pointer-events-none" style="animation-delay: -3s"></div>
+
+    <!-- Floating particles -->
+    <div class="particle" style="top:20%;left:10%;--dur:7s;--delay:-1s"></div>
+    <div class="particle" style="top:70%;left:85%;--dur:5s;--delay:-3s"></div>
+    <div class="particle" style="top:40%;left:92%;--dur:8s;--delay:-5s"></div>
+    <div class="particle" style="top:80%;left:15%;--dur:6s;--delay:-2s"></div>
+    <div class="particle" style="top:10%;left:75%;--dur:9s;--delay:-4s"></div>
+
+    <div class="relative z-10 max-w-5xl mx-auto px-6 text-center">
+
+      <!-- Badge -->
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-claude-border bg-claude-surface/50 text-claude-orange text-sm font-mono mb-8 animate-fade-in">
+        <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+        Now available as npm package
+      </div>
+
+      <!-- Main heading -->
+      <h1 class="text-6xl md:text-8xl font-extrabold tracking-tight mb-6 leading-none">
+        <span class="block text-white animate-slide-up" style="animation-delay:0.1s">Code with</span>
+        <span class="block glow-orange text-claude-orange animate-slide-up" style="animation-delay:0.3s;opacity:0">Claude.</span>
+      </h1>
+
+      <p class="text-xl md:text-2xl text-claude-muted max-w-3xl mx-auto mb-12 leading-relaxed animate-slide-up" style="animation-delay:0.5s;opacity:0">
+        An agentic AI coding tool that lives in your terminal. Understands your entire codebase,
+        writes and edits files, runs commands, and ships features — all from the CLI.
+      </p>
+
+      <!-- CTA Buttons -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up" style="animation-delay:0.7s;opacity:0">
+        <a href="#install"
+          class="shimmer-btn text-white font-bold px-8 py-4 rounded-xl text-lg flex items-center justify-center gap-2 hover:scale-105 transition-transform">
+          <span>→</span> Install Now
+        </a>
+        <a href="#demo"
+          class="border border-claude-border bg-claude-surface/50 backdrop-blur text-white font-semibold px-8 py-4 rounded-xl text-lg hover:border-claude-orange hover:text-claude-orange transition-all flex items-center justify-center gap-2">
+          <span>▶</span> See it in action
+        </a>
+      </div>
+
+      <!-- Stats row -->
+      <div class="grid grid-cols-3 gap-8 mt-20 pt-12 border-t border-claude-border animate-slide-up" style="animation-delay:0.9s;opacity:0">
+        <div>
+          <div class="text-4xl font-black stat-counter">100K+</div>
+          <div class="text-claude-muted text-sm mt-1">Developers</div>
+        </div>
+        <div>
+          <div class="text-4xl font-black stat-counter">10M+</div>
+          <div class="text-claude-muted text-sm mt-1">Lines Written</div>
+        </div>
+        <div>
+          <div class="text-4xl font-black stat-counter">200K</div>
+          <div class="text-claude-muted text-sm mt-1">Token Context</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scroll indicator -->
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-claude-muted animate-bounce">
+      <span class="text-xs font-mono">scroll</span>
+      <div class="w-px h-8 bg-gradient-to-b from-claude-orange to-transparent"></div>
+    </div>
+  </section>
+
+  <!-- Terminal Demo Section -->
+  <section id="demo" class="py-32 px-6 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-claude-orange/5 to-transparent pointer-events-none"></div>
+
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center mb-16">
+        <span class="text-claude-orange font-mono text-sm tracking-widest uppercase">Live Demo</span>
+        <h2 class="text-4xl md:text-5xl font-bold mt-3">Watch it work.</h2>
+        <p class="text-claude-muted mt-4 text-lg">One command. Infinite possibilities.</p>
+      </div>
+
+      <!-- Terminal window -->
+      <div class="relative rounded-2xl border border-claude-border bg-claude-surface glow-border overflow-hidden">
+        <!-- Scan line effect -->
+        <div class="scan-line"></div>
+
+        <!-- Terminal header -->
+        <div class="flex items-center gap-3 px-6 py-4 border-b border-claude-border bg-claude-card/50">
+          <div class="flex gap-2">
+            <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
+            <div class="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+            <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
+          </div>
+          <div class="flex-1 text-center">
+            <span class="text-claude-muted text-sm font-mono">~/project — claude-code</span>
+          </div>
+        </div>
+
+        <!-- Terminal content -->
+        <div class="p-8 font-mono text-sm space-y-3 min-h-72">
+          <div class="terminal-line flex gap-3">
+            <span class="text-claude-orange">❯</span>
+            <span class="text-white">claude "Add authentication with JWT to this Express app"</span>
+          </div>
+          <div class="terminal-line flex gap-3">
+            <span class="text-purple-400">◆</span>
+            <span class="text-claude-muted">Analyzing codebase... found 23 files</span>
+          </div>
+          <div class="terminal-line flex gap-3">
+            <span class="text-blue-400">◆</span>
+            <span class="text-claude-muted">Reading <span class="text-white">src/routes/auth.js</span>, <span class="text-white">src/middleware/index.js</span></span>
+          </div>
+          <div class="terminal-line flex gap-3">
+            <span class="text-green-400">✔</span>
+            <span class="text-white">Creating <span class="text-green-400">src/middleware/auth.js</span></span>
+          </div>
+          <div class="terminal-line flex gap-3">
+            <span class="text-green-400">✔</span>
+            <span class="text-white">Updating <span class="text-yellow-400">src/routes/user.js</span> — added 3 protected routes</span>
+          </div>
+          <div class="terminal-line flex gap-3">
+            <span class="text-claude-orange">✦</span>
+            <span class="text-claude-orange font-semibold">Done! JWT auth implemented. Run <span class="bg-claude-card px-2 py-0.5 rounded text-white">npm test</span> to verify.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="py-32 px-6">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-20">
+        <span class="text-claude-orange font-mono text-sm tracking-widest uppercase">Capabilities</span>
+        <h2 class="text-4xl md:text-5xl font-bold mt-3">Built for real work.</h2>
+        <p class="text-claude-muted mt-4 text-lg max-w-2xl mx-auto">
+          Not just a chatbot. An autonomous agent that understands your project and gets things done.
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- Feature cards -->
+        <div class="feature-card rounded-2xl border border-claude-border bg-claude-card p-8 group">
+          <div class="w-12 h-12 rounded-xl bg-claude-orange/10 border border-claude-orange/20 flex items-center justify-center text-2xl mb-6 group-hover:bg-claude-orange/20 transition-colors">
+            🧠
+          </div>
+          <h3 class="text-xl font-bold mb-3">Codebase-Aware</h3>
+          <p class="text-claude-muted leading-relaxed">Reads and understands your entire project structure before writing a single line. No hallucinations about your code.</p>
+        </div>
+
+        <div class="feature-card rounded-2xl border border-claude-border bg-claude-card p-8 group">
+          <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-2xl mb-6 group-hover:bg-purple-500/20 transition-colors">
+            ⚡
+          </div>
+          <h3 class="text-xl font-bold mb-3">Multi-file Edits</h3>
+          <p class="text-claude-muted leading-relaxed">Handles complex refactors that span dozens of files simultaneously. Atomic changes with full rollback.</p>
+        </div>
+
+        <div class="feature-card rounded-2xl border border-claude-border bg-claude-card p-8 group">
+          <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-2xl mb-6 group-hover:bg-blue-500/20 transition-colors">
+            🔧
+          </div>
+          <h3 class="text-xl font-bold mb-3">Tool Execution</h3>
+          <p class="text-claude-muted leading-relaxed">Runs terminal commands, test suites, and build tools. Sees output and iterates until green.</p>
+        </div>
+
+        <div class="feature-card rounded-2xl border border-claude-border bg-claude-card p-8 group">
+          <div class="w-12 h-12 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center text-2xl mb-6 group-hover:bg-green-500/20 transition-colors">
+            🔀
+          </div>
+          <h3 class="text-xl font-bold mb-3">Git-Native</h3>
+          <p class="text-claude-muted leading-relaxed">Creates branches, commits with meaningful messages, and opens PRs. Respects your git workflow.</p>
+        </div>
+
+        <div class="feature-card rounded-2xl border border-claude-border bg-claude-card p-8 group">
+          <div class="w-12 h-12 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-2xl mb-6 group-hover:bg-yellow-500/20 transition-colors">
+            🔌
+          </div>
+          <h3 class="text-xl font-bold mb-3">MCP Extensible</h3>
+          <p class="text-claude-muted leading-relaxed">Connect to databases, APIs, and services via Model Context Protocol. Extend Claude's reach.</p>
+        </div>
+
+        <div class="feature-card rounded-2xl border border-claude-border bg-claude-card p-8 group">
+          <div class="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-2xl mb-6 group-hover:bg-red-500/20 transition-colors">
+            🛡️
+          </div>
+          <h3 class="text-xl font-bold mb-3">Permission Control</h3>
+          <p class="text-claude-muted leading-relaxed">Granular approval modes. Ask before every action or let it run fully autonomous. You decide.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Workflow Section -->
+  <section id="workflow" class="py-32 px-6 relative overflow-hidden">
+    <div class="absolute inset-0 grid-bg opacity-50 pointer-events-none"></div>
+    <div class="max-w-5xl mx-auto relative z-10">
+      <div class="text-center mb-20">
+        <span class="text-claude-orange font-mono text-sm tracking-widest uppercase">How It Works</span>
+        <h2 class="text-4xl md:text-5xl font-bold mt-3">The agentic loop.</h2>
+      </div>
+
+      <div class="relative">
+        <!-- Vertical line -->
+        <div class="absolute left-8 top-0 bottom-0 w-px bg-gradient-to-b from-claude-orange via-purple-500 to-blue-500 md:left-1/2"></div>
+
+        <div class="space-y-16">
+          <!-- Step 1 -->
+          <div class="flex flex-col md:flex-row gap-8 items-start md:items-center relative">
+            <div class="md:w-1/2 md:text-right md:pr-16 pl-16 md:pl-0">
+              <div class="inline-block px-3 py-1 bg-claude-orange/20 border border-claude-orange/30 rounded-full text-claude-orange text-xs font-mono mb-3">Step 01</div>
+              <h3 class="text-2xl font-bold mb-3">You describe the task</h3>
+              <p class="text-claude-muted">Plain English. No special syntax. Just tell Claude what you want to build, fix, or change.</p>
+            </div>
+            <div class="absolute left-6 md:left-1/2 md:-translate-x-1/2 w-5 h-5 rounded-full bg-claude-orange border-4 border-claude-dark"></div>
+            <div class="md:w-1/2 md:pl-16 pl-16">
+              <div class="bg-claude-card border border-claude-border rounded-xl p-4 font-mono text-sm">
+                <span class="text-claude-orange">❯</span> <span class="text-white">claude "Refactor auth to use refresh tokens"</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="flex flex-col md:flex-row gap-8 items-start md:items-center relative">
+            <div class="md:w-1/2 md:text-right md:pr-16 pl-16 md:pl-0 md:order-1 order-2">
+              <div class="bg-claude-card border border-claude-border rounded-xl p-4 font-mono text-sm space-y-2">
+                <div><span class="text-purple-400">◆</span> <span class="text-claude-muted">Reading 8 files...</span></div>
+                <div><span class="text-blue-400">◆</span> <span class="text-claude-muted">Planning changes...</span></div>
+              </div>
+            </div>
+            <div class="absolute left-6 md:left-1/2 md:-translate-x-1/2 w-5 h-5 rounded-full bg-purple-500 border-4 border-claude-dark"></div>
+            <div class="md:w-1/2 md:pl-16 pl-16 md:order-2 order-1">
+              <div class="inline-block px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-full text-purple-400 text-xs font-mono mb-3">Step 02</div>
+              <h3 class="text-2xl font-bold mb-3">Claude explores & plans</h3>
+              <p class="text-claude-muted">Reads relevant files, understands architecture, and forms a precise execution plan.</p>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="flex flex-col md:flex-row gap-8 items-start md:items-center relative">
+            <div class="md:w-1/2 md:text-right md:pr-16 pl-16 md:pl-0">
+              <div class="inline-block px-3 py-1 bg-blue-500/20 border border-blue-500/30 rounded-full text-blue-400 text-xs font-mono mb-3">Step 03</div>
+              <h3 class="text-2xl font-bold mb-3">Executes & verifies</h3>
+              <p class="text-claude-muted">Makes changes, runs tests, fixes failures — iterates until everything passes.</p>
+            </div>
+            <div class="absolute left-6 md:left-1/2 md:-translate-x-1/2 w-5 h-5 rounded-full bg-blue-500 border-4 border-claude-dark"></div>
+            <div class="md:w-1/2 md:pl-16 pl-16">
+              <div class="bg-claude-card border border-claude-border rounded-xl p-4 font-mono text-sm space-y-2">
+                <div><span class="text-green-400">✔</span> <span class="text-white">All 47 tests passing</span></div>
+                <div><span class="text-claude-orange">✦</span> <span class="text-claude-orange">Done!</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Install Section -->
+  <section id="install" class="py-32 px-6">
+    <div class="max-w-3xl mx-auto text-center">
+      <span class="text-claude-orange font-mono text-sm tracking-widest uppercase">Get Started</span>
+      <h2 class="text-4xl md:text-5xl font-bold mt-3 mb-6">One command away.</h2>
+      <p class="text-claude-muted text-lg mb-12">Install via npm and start shipping faster today.</p>
+
+      <!-- Install box -->
+      <div class="relative rounded-2xl border border-claude-border bg-claude-surface p-8 glow-border group mb-8">
+        <div class="scan-line"></div>
+        <div class="flex items-center justify-between gap-4">
+          <div class="font-mono text-lg text-left">
+            <span class="text-claude-muted select-none">$ </span>
+            <span class="text-white">npm install -g @anthropic-ai/claude-code</span>
+          </div>
+          <button onclick="copyInstall(this)"
+            class="flex-shrink-0 px-4 py-2 rounded-lg border border-claude-border bg-claude-card hover:border-claude-orange text-claude-muted hover:text-white text-sm font-mono transition-all">
+            copy
+          </button>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="https://docs.anthropic.com/claude-code" target="_blank"
+          class="border border-claude-border bg-claude-card text-white font-semibold px-6 py-3 rounded-xl hover:border-claude-orange hover:text-claude-orange transition-all">
+          Read the Docs →
+        </a>
+        <a href="https://github.com/anthropics/claude-code" target="_blank"
+          class="shimmer-btn text-white font-bold px-6 py-3 rounded-xl hover:scale-105 transition-transform">
+          GitHub →
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-claude-border py-12 px-6">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-claude-muted text-sm">
+      <div class="flex items-center gap-3">
+        <div class="w-6 h-6 rounded bg-claude-orange flex items-center justify-center">
+          <span class="text-white text-xs font-bold font-mono">C</span>
+        </div>
+        <span>Claude Code by <span class="text-white font-medium">Anthropic</span></span>
+      </div>
+      <div class="flex gap-8">
+        <a href="#" class="hover:text-white transition-colors">Privacy</a>
+        <a href="#" class="hover:text-white transition-colors">Terms</a>
+        <a href="https://docs.anthropic.com" class="hover:text-white transition-colors">Docs</a>
+      </div>
+      <span class="font-mono text-xs">© 2026 Anthropic, PBC</span>
+    </div>
+  </footer>
+
+  <script>
+    function copyInstall(btn) {
+      navigator.clipboard.writeText('npm install -g @anthropic-ai/claude-code');
+      const orig = btn.textContent;
+      btn.textContent = 'copied!';
+      btn.style.color = '#4ade80';
+      btn.style.borderColor = '#4ade80';
+      setTimeout(() => {
+        btn.textContent = orig;
+        btn.style.color = '';
+        btn.style.borderColor = '';
+      }, 2000);
+    }
+
+    // Intersection Observer for scroll animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(el => {
+        if (el.isIntersecting) {
+          el.target.style.opacity = '1';
+          el.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.feature-card').forEach((card, i) => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(30px)';
+      card.style.transition = `opacity 0.6s ease ${i * 0.1}s, transform 0.6s ease ${i * 0.1}s`;
+      observer.observe(card);
+    });
+  </script>
+</body>
+</html>
