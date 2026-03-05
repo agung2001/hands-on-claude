@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(echo '{}' | python3 /Users/muhammadsundoro/Documents/repository/github/hands-on-claude/.claude/hooks/on-stop.py)"
+    ]
+  }
+}
